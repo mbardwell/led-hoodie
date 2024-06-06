@@ -10,15 +10,15 @@
 
 #include <Adafruit_NeoPixel.h>
 
-#define PIN_LED_ARM_L        0
-#define PIN_LED_ARM_R        1
-#define PIN_LED_BCK_1        2
+#define GPIO_LED_ARM_L        0
+#define GPIO_LED_ARM_R        1
+#define GPIO_LED_BCK_1        2
 
 #define NUMPIXELS 16
 
-Adafruit_NeoPixel led_arm_l(NUMPIXELS, PIN_LED_ARM_L, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel led_arm_r(NUMPIXELS, PIN_LED_ARM_R, NEO_GRB + NEO_KHZ800);
-Adafruit_NeoPixel led_bck_1(NUMPIXELS, PIN_LED_BCK_1, NEO_GRB + NEO_KHZ800);
+Adafruit_NeoPixel led_arm_l(NUMPIXELS, GPIO_LED_ARM_L);
+Adafruit_NeoPixel led_arm_r(NUMPIXELS, GPIO_LED_ARM_R);
+Adafruit_NeoPixel led_bck_1(NUMPIXELS, GPIO_LED_BCK_1);
 
 #define DELAYVAL 500
 
