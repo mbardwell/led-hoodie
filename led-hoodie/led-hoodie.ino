@@ -25,8 +25,8 @@
 
 constexpr int16_t GPIO_LED_ARM_L = 1;     // PIN 1 on v0.1.0 schematics is GP0
 constexpr int16_t GPIO_LED_ARM_R = 4;     // PIN 2 on v0.1.0 schematics is GP1
-constexpr int16_t GPIO_LED_BCK_T = 2;     // PIN 4 on v0.1.0 schematics is GP2
-constexpr int16_t GPIO_LED_BCK_B = 5;     // PIN 5 on v0.1.0 schematics is GP3
+constexpr int16_t GPIO_LED_BCK_T = 5;     // PIN 4 on v0.1.0 schematics is GP2
+constexpr int16_t GPIO_LED_BCK_B = 2;     // PIN 5 on v0.1.0 schematics is GP3
 constexpr int16_t GPIO_LED_EYE_L = 0;     // PIN 6 on v0.1.0 schematics is GP4
 constexpr int16_t GPIO_LED_EYE_R = 3;     // PIN 7 on v0.1.0 schematics is GP5
 constexpr int16_t GPIO_LED_ONBOARD = 22;  // LED at the bottom of the PCB
@@ -36,14 +36,16 @@ constexpr int16_t N_EYE_PIXELS = 16;
 constexpr int16_t N_BCK_MATRIX_HGT = 8;
 constexpr int16_t N_BCK_MATRIX_WDT = 32;
 constexpr uint8_t BRIGHTNESS = 25;
+constexpr int ADC_MIN = 0;
+constexpr int ADC_MAX = 1023;
 
 CRGB led_arm_l_buf[N_ARM_PIXELS];
 CRGB led_arm_r_buf[N_ARM_PIXELS];
 CRGB led_eye_l_buf[N_EYE_PIXELS];
 CRGB led_eye_r_buf[N_EYE_PIXELS];
 
-Adafruit_NeoMatrix led_bck_top(N_BCK_MATRIX_WDT, N_BCK_MATRIX_HGT, GPIO_LED_BCK_T, NEO_MATRIX_TOP + NEO_MATRIX_LEFT + NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG);
-Adafruit_NeoMatrix led_bck_bot(N_BCK_MATRIX_WDT, N_BCK_MATRIX_HGT, GPIO_LED_BCK_B, NEO_MATRIX_BOTTOM + NEO_MATRIX_RIGHT + NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG);
+Adafruit_NeoMatrix led_bck_top(N_BCK_MATRIX_WDT, N_BCK_MATRIX_HGT, GPIO_LED_BCK_T, NEO_MATRIX_BOTTOM + NEO_MATRIX_RIGHT + NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG);
+Adafruit_NeoMatrix led_bck_bot(N_BCK_MATRIX_WDT, N_BCK_MATRIX_HGT, GPIO_LED_BCK_B, NEO_MATRIX_TOP + NEO_MATRIX_LEFT + NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG);
 
 constexpr int RETURN_SUCCESS = 0;
 int thread_onboard_led_handler();
@@ -54,15 +56,16 @@ int thread_eye_handler();
 int setup_bck();
 int thread_bck_handler_scroll();
 int thread_bck_handler_pop();
-int thread_microphone_handler();
+int thread_bck_handler_music_levels();
+int get_microphone_delta();
 
 enum Mode {
   ITS_PARTY_TIME,
   I_LOVE_YOU,
-  MOUTH,
+  MUSIC_LEVEL,
 };
 
-Mode mode;
+Mode mode = ITS_PARTY_TIME;
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
@@ -78,26 +81,34 @@ void setup() {
 
 void loop() {
   static uint32_t last_time = 0;
+  static int microphone_delta = 0;
 
-  if (millis() - last_time > 60000) {
+  if (millis() - last_time > 10000) {
     mode = static_cast<Mode>(static_cast<int>(mode) + 1);
     last_time = millis();
   }
 
   switch (mode) {
     case ITS_PARTY_TIME:
-      thread_microphone_handler();
+      get_microphone_delta();
       thread_onboard_led_handler();
       thread_arm_handler();
       thread_eye_handler();
       thread_bck_handler_scroll();
       break;
     case I_LOVE_YOU:
-      thread_microphone_handler();
+      get_microphone_delta();
       thread_onboard_led_handler();
       thread_arm_handler();
       thread_eye_handler();
       thread_bck_handler_pop();
+      break;
+    case MUSIC_LEVEL:
+      microphone_delta = get_microphone_delta();
+      thread_onboard_led_handler();
+      thread_arm_handler();
+      thread_eye_handler();
+      thread_bck_handler_music_levels(microphone_delta);
       break;
     default:
       mode = ITS_PARTY_TIME;
@@ -120,13 +131,9 @@ int thread_onboard_led_handler() {
   return RETURN_SUCCESS;
 }
 
-int thread_microphone_handler() {
-  static uint32_t last_time = 0;
-  if (millis() - last_time < 333) {
-    return RETURN_SUCCESS;
-  }
-  int _min = 1024;
-  int _max = 0;
+int get_microphone_delta() {
+  int _min = ADC_MAX;  // Start at opposite ends on purpose
+  int _max = ADC_MIN;  // Start at opposite ends on purpose
   int sensor_value = 0;
   int delta = 0;
 
@@ -147,8 +154,7 @@ int thread_microphone_handler() {
   if (delta > 100)
     digitalWrite(GPIO_LED_ONBOARD, digitalRead(GPIO_LED_ONBOARD) == HIGH ? LOW : HIGH);
 
-  last_time = millis();
-  return RETURN_SUCCESS;
+  return delta;
 }
 
 int setup_arm() {
@@ -267,7 +273,6 @@ int thread_bck_handler_scroll() {
 }
 
 int thread_bck_handler_pop() {
-  static int x = led_bck_top.width();
   static uint32_t last_time = 0;
   static uint32_t pass = 0;
   if (millis() - last_time < 1000) {
@@ -311,6 +316,45 @@ int thread_bck_handler_pop() {
       break;
   }
   pass += 1;
+  led_bck_top.show();
+  led_bck_bot.show();
+
+  last_time = millis();
+  return RETURN_SUCCESS;
+}
+
+int thread_bck_handler_music_levels(int delta) {
+  static uint32_t last_time = 0;
+
+  if (millis() - last_time < 25) {
+    return RETURN_SUCCESS;
+  }
+
+  static int cache_top[N_BCK_MATRIX_WDT] = {0};
+  static int cache_bot[N_BCK_MATRIX_WDT] = {0};
+
+  led_bck_top.clear();
+  led_bck_bot.clear();
+
+  int level = random(0, N_BCK_MATRIX_HGT - 3);  // Allow for adj to increase by 1-2
+  int adj = static_cast<int>(static_cast<float>(delta) / 50.0);
+  level += adj;
+  // Serial.print(delta);
+  // Serial.print(" ");
+  // Serial.println(adj);
+  cache_top[0] = -level; // +1 makes no sense to me but that's what makes height equal to bottom
+  cache_bot[0] = level + 1;
+
+  for (int i = N_BCK_MATRIX_WDT - 1; i > 0; i--) {
+    cache_top[i] = cache_top[i - 1];
+    cache_bot[i] = cache_bot[i - 1];
+    led_bck_top.drawFastVLine(i, N_BCK_MATRIX_HGT + 1, cache_top[i], LED_PURPLE_HIGH);
+    led_bck_bot.drawFastVLine(i, -1, cache_bot[i], LED_RED_HIGH);
+  }
+
+  led_bck_top.drawFastVLine(0, N_BCK_MATRIX_HGT + 1, cache_top[0], LED_PURPLE_HIGH);
+  led_bck_bot.drawFastVLine(0, -1, cache_bot[0], LED_RED_HIGH);
+
   led_bck_top.show();
   led_bck_bot.show();
 
