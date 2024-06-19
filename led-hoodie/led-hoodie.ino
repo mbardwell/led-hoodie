@@ -27,20 +27,20 @@ constexpr int16_t GPIO_LED_ARM_L = 1;     // PIN 1 on v0.1.0 schematics is GP0
 constexpr int16_t GPIO_LED_ARM_R = 4;     // PIN 2 on v0.1.0 schematics is GP1
 constexpr int16_t GPIO_LED_BCK_T = 2;     // PIN 4 on v0.1.0 schematics is GP2
 constexpr int16_t GPIO_LED_BCK_B = 5;     // PIN 5 on v0.1.0 schematics is GP3
-constexpr int16_t GPIO_LED_EAR_L = 0;     // PIN 6 on v0.1.0 schematics is GP4
-constexpr int16_t GPIO_LED_EAR_R = 3;     // PIN 7 on v0.1.0 schematics is GP5
+constexpr int16_t GPIO_LED_EYE_L = 0;     // PIN 6 on v0.1.0 schematics is GP4
+constexpr int16_t GPIO_LED_EYE_R = 3;     // PIN 7 on v0.1.0 schematics is GP5
 constexpr int16_t GPIO_LED_ONBOARD = 22;  // LED at the bottom of the PCB
 constexpr int16_t GPIO_MICROPHONE = 26;
 constexpr int16_t N_ARM_PIXELS = 30;
-constexpr int16_t N_EAR_PIXELS = 16;
+constexpr int16_t N_EYE_PIXELS = 16;
 constexpr int16_t N_BCK_MATRIX_HGT = 8;
 constexpr int16_t N_BCK_MATRIX_WDT = 32;
 constexpr uint8_t BRIGHTNESS = 25;
 
 CRGB led_arm_l_buf[N_ARM_PIXELS];
 CRGB led_arm_r_buf[N_ARM_PIXELS];
-CRGB led_ear_l_buf[N_EAR_PIXELS];
-CRGB led_ear_r_buf[N_EAR_PIXELS];
+CRGB led_eye_l_buf[N_EYE_PIXELS];
+CRGB led_eye_r_buf[N_EYE_PIXELS];
 
 Adafruit_NeoMatrix led_bck_top(N_BCK_MATRIX_WDT, N_BCK_MATRIX_HGT, GPIO_LED_BCK_T, NEO_MATRIX_TOP + NEO_MATRIX_LEFT + NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG);
 Adafruit_NeoMatrix led_bck_bot(N_BCK_MATRIX_WDT, N_BCK_MATRIX_HGT, GPIO_LED_BCK_B, NEO_MATRIX_BOTTOM + NEO_MATRIX_RIGHT + NEO_MATRIX_COLUMNS + NEO_MATRIX_ZIGZAG);
@@ -49,8 +49,8 @@ constexpr int RETURN_SUCCESS = 0;
 int thread_onboard_led_handler();
 int setup_arm();
 int thread_arm_handler();
-int setup_ear();
-int thread_ear_handler();
+int setup_eye();
+int thread_eye_handler();
 int setup_bck();
 int thread_bck_handler_scroll();
 int thread_bck_handler_pop();
@@ -69,7 +69,7 @@ void setup() {
   pinMode(GPIO_LED_ONBOARD, OUTPUT);
   digitalWrite(GPIO_LED_ONBOARD, LOW);
   setup_arm();
-  setup_ear();
+  setup_eye();
   setup_bck();
   led_bck_top.setBrightness(BRIGHTNESS);
   led_bck_bot.setBrightness(BRIGHTNESS);
@@ -89,14 +89,14 @@ void loop() {
       thread_microphone_handler();
       thread_onboard_led_handler();
       thread_arm_handler();
-      thread_ear_handler();
+      thread_eye_handler();
       thread_bck_handler_scroll();
       break;
     case I_LOVE_YOU:
       thread_microphone_handler();
       thread_onboard_led_handler();
       thread_arm_handler();
-      thread_ear_handler();
+      thread_eye_handler();
       thread_bck_handler_pop();
       break;
     default:
@@ -179,14 +179,14 @@ int thread_arm_handler() {
   return RETURN_SUCCESS;
 }
 
-int setup_ear() {
-  FastLED.addLeds<NEOPIXEL, GPIO_LED_EAR_L>(led_ear_l_buf, N_EAR_PIXELS);
-  FastLED.addLeds<NEOPIXEL, GPIO_LED_EAR_R>(led_ear_r_buf, N_EAR_PIXELS);
+int setup_eye() {
+  FastLED.addLeds<NEOPIXEL, GPIO_LED_EYE_L>(led_eye_l_buf, N_EYE_PIXELS);
+  FastLED.addLeds<NEOPIXEL, GPIO_LED_EYE_R>(led_eye_r_buf, N_EYE_PIXELS);
 
   return RETURN_SUCCESS;
 }
 
-int thread_ear_handler() {
+int thread_eye_handler() {
   static uint32_t last_time = 0;
   static uint32_t i = 0;
   static uint32_t i_ = 0;
@@ -196,7 +196,7 @@ int thread_ear_handler() {
   }
 
   if (up) {
-    if (i < N_EAR_PIXELS)
+    if (i < N_EYE_PIXELS)
       i += 1;
     else
       up = false;
@@ -207,10 +207,10 @@ int thread_ear_handler() {
       up = true;
   }
 
-  led_ear_l_buf[i_] = CRGB::Black;
-  led_ear_r_buf[i_] = CRGB::Black;
-  led_ear_l_buf[i] = CRGB::HotPink;
-  led_ear_r_buf[i] = CRGB::AliceBlue;
+  led_eye_l_buf[i_] = CRGB::Black;
+  led_eye_r_buf[i_] = CRGB::Black;
+  led_eye_l_buf[i] = CRGB::HotPink;
+  led_eye_r_buf[i] = CRGB::AliceBlue;
 
   i_ = i;
   last_time = millis();
