@@ -9,6 +9,10 @@
  * 
  * Mixes NeoMatrix and FastLED libraries. 
  * Unfortunately, the FastLED NeoMatrix library was buggy on the PicoW
+ *
+ * Ideas:
+ *   Pacman https://projecthub.arduino.cc/giobbino/arduino-nano-pac-man-7d5f47
+ *   Mouth using eyes and top back panel
 */
 
 #include <FastLED.h>
@@ -52,6 +56,14 @@ int thread_bck_handler_scroll();
 int thread_bck_handler_pop();
 int thread_microphone_handler();
 
+enum Mode {
+  ITS_PARTY_TIME,
+  I_LOVE_YOU,
+  MOUTH,
+};
+
+Mode mode;
+
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
   pinMode(GPIO_LED_ONBOARD, OUTPUT);
@@ -65,11 +77,32 @@ void setup() {
 }
 
 void loop() {
-  thread_microphone_handler();
-  thread_onboard_led_handler();
-  thread_arm_handler();
-  thread_ear_handler();
-  thread_bck_handler_pop();
+  static uint32_t last_time = 0;
+
+  if (millis() - last_time > 60000) {
+    mode = static_cast<Mode>(static_cast<int>(mode) + 1);
+    last_time = millis();
+  }
+
+  switch (mode) {
+    case ITS_PARTY_TIME:
+      thread_microphone_handler();
+      thread_onboard_led_handler();
+      thread_arm_handler();
+      thread_ear_handler();
+      thread_bck_handler_scroll();
+      break;
+    case I_LOVE_YOU:
+      thread_microphone_handler();
+      thread_onboard_led_handler();
+      thread_arm_handler();
+      thread_ear_handler();
+      thread_bck_handler_pop();
+      break;
+    default:
+      mode = ITS_PARTY_TIME;
+      break;
+  }
 
   FastLED.show();
 }
