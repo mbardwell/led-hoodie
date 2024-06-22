@@ -286,35 +286,46 @@ int thread_bck_handler_pop() {
   led_bck_top.setTextColor(LED_RED_HIGH);
   led_bck_bot.setTextColor(LED_RED_HIGH);
 
+  int offset;
+  String str;
+  bool update;
   switch (pass) {
     case 1:
-      led_bck_top.setCursor((led_bck_top.width() / 2) - 2, 0);
-      led_bck_top.write("I");
-      led_bck_bot.setCursor((led_bck_bot.width() / 2) - 2, 0);
-      led_bck_bot.write("I");
+      str = "I";
+      offset = (led_bck_top.width() / 2) - 2;
+      update = true;
       break;
     case 2:
-      led_bck_top.setCursor((led_bck_top.width() / 2) - 11, 0);
-      led_bck_top.write("LOVE");
-      led_bck_bot.setCursor((led_bck_bot.width() / 2) - 11, 0);
-      led_bck_bot.write("LOVE");
+      str = "LOVE";
+      offset = (led_bck_top.width() / 2) - 11;
+      update = true;
       break;
     case 3:
-      led_bck_top.setCursor((led_bck_top.width() / 2) - 8, 0);
-      led_bck_top.write("YOU");
-      led_bck_bot.setCursor((led_bck_bot.width() / 2) - 8, 0);
-      led_bck_bot.write("YOU");
+      str = "YOU";
+      offset = (led_bck_top.width() / 2) - 8;
+      update = true;
       break;
     case 4:
       led_bck_top.drawBitmap((led_bck_top.width() / 2) - 3, 0, led_designs::bitmap_heart_7_x_7, 7, 7, LED_RED_HIGH);
       led_bck_top.drawBitmap(1, 0, led_designs::bitmap_heart_7_x_7, 7, 7, LED_RED_HIGH);
       led_bck_top.drawBitmap(led_bck_top.width() - 8, 0, led_designs::bitmap_heart_7_x_7, 7, 7, LED_RED_HIGH);
       led_bck_bot.drawBitmap((led_bck_top.width() / 2) - 3, 0, led_designs::bitmap_heart_7_x_7, 7, 7, LED_RED_HIGH);
+      led_bck_bot.drawBitmap(1, 0, led_designs::bitmap_heart_7_x_7, 7, 7, LED_RED_HIGH);
+      led_bck_bot.drawBitmap(led_bck_top.width() - 8, 0, led_designs::bitmap_heart_7_x_7, 7, 7, LED_RED_HIGH);
       break;
     default:
       pass = 0;
       break;
   }
+
+  if (update) {
+    led_bck_top.setCursor(offset, 0);
+    led_bck_top.write(str.c_str());
+    led_bck_bot.setCursor(offset, 0);
+    led_bck_bot.write(str.c_str());
+    update = false;
+  }
+
   pass += 1;
   led_bck_top.show();
   led_bck_bot.show();
