@@ -60,12 +60,12 @@ int thread_bck_handler_music_levels();
 int get_microphone_delta();
 
 enum Mode {
-  ITS_PARTY_TIME,
-  I_LOVE_YOU,
-  MUSIC_LEVEL,
+  MODE_BACK_SCROLL,
+  MODE_BACK_POP,
+  MODE_MUSIC_LEVEL,
 };
 
-Mode mode = ITS_PARTY_TIME;
+Mode mode = MODE_BACK_SCROLL;
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
@@ -90,21 +90,21 @@ void loop() {
   }
 
   switch (mode) {
-    case ITS_PARTY_TIME:
+    case MODE_BACK_SCROLL:
       get_microphone_delta();
       thread_onboard_led_handler();
       thread_arm_handler();
       thread_eye_handler();
       thread_bck_handler_scroll();
       break;
-    case I_LOVE_YOU:
+    case MODE_BACK_POP:
       get_microphone_delta();
       thread_onboard_led_handler();
       thread_arm_handler();
       thread_eye_handler();
       thread_bck_handler_pop();
       break;
-    case MUSIC_LEVEL:
+    case MODE_MUSIC_LEVEL:
       microphone_delta = get_microphone_delta();
       thread_onboard_led_handler();
       thread_arm_handler();
@@ -112,7 +112,7 @@ void loop() {
       thread_bck_handler_music_levels(microphone_delta);
       break;
     default:
-      mode = ITS_PARTY_TIME;
+      mode = MODE_BACK_SCROLL;
       break;
   }
 
