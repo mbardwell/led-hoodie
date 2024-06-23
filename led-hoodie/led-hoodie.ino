@@ -269,13 +269,10 @@ int thread_bck_handler_scroll() {
   }
 
   led_bck_top.clear();
-  led_bck_top.show();
-  led_bck_bot.clear();
-  led_bck_bot.show();
-
   led_bck_top.setCursor(x, 0);
   led_bck_top.write(quotes[index]);
   led_bck_top.show();
+  led_bck_bot.clear();
   led_bck_bot.setCursor(x, 0);
   led_bck_bot.write(quotes[index]);
   led_bck_bot.show();
