@@ -35,7 +35,7 @@ constexpr int16_t N_ARM_PIXELS = 30;
 constexpr int16_t N_EYE_PIXELS = 16;
 constexpr int16_t N_BCK_MATRIX_HGT = 8;
 constexpr int16_t N_BCK_MATRIX_WDT = 32;
-constexpr uint8_t BRIGHTNESS = 25;
+constexpr uint8_t BRIGHTNESS = 50;
 constexpr int ADC_MIN = 0;
 constexpr int ADC_MAX = 1023;
 
@@ -77,6 +77,7 @@ void setup() {
   led_bck_top.setBrightness(BRIGHTNESS);
   led_bck_bot.setBrightness(BRIGHTNESS);
   FastLED.setBrightness(BRIGHTNESS);
+  randomSeed(analogRead(0));
 }
 
 void loop() {
@@ -246,12 +247,26 @@ int setup_bck() {
 }
 
 int thread_bck_handler_scroll() {
+  const char *quotes[] = {
+    "IT'S PARTY TIME",
+    "VERY NICE, HOW MUCH",
+    "TO INFINITY AND BEYOND",
+    "I AM GROOT",
+    "ARE YOU HIGH YET",
+  };
+  const int n_quotes = sizeof(quotes) / sizeof(quotes[0]);
+  static int index = random(0, n_quotes);
   static int x = led_bck_top.width();
+  static int next = false;
   static uint32_t last_time = 0;
   if (millis() - last_time < 10) {
     return RETURN_SUCCESS;
   }
-  char buf[] = "IT'S PARTY TIME";
+
+  if (next) {
+    index = random(0, n_quotes);
+    next = false;
+  }
 
   led_bck_top.clear();
   led_bck_top.show();
@@ -259,14 +274,16 @@ int thread_bck_handler_scroll() {
   led_bck_bot.show();
 
   led_bck_top.setCursor(x, 0);
-  led_bck_top.write(buf);
+  led_bck_top.write(quotes[index]);
   led_bck_top.show();
   led_bck_bot.setCursor(x, 0);
-  led_bck_bot.write(buf);
+  led_bck_bot.write(quotes[index]);
   led_bck_bot.show();
 
-  if (--x < -100)
+  if (--x < -100) {
     x = led_bck_top.width();
+    next = true;
+  }
 
   last_time = millis();
   return RETURN_SUCCESS;
@@ -291,21 +308,26 @@ int thread_bck_handler_pop() {
   bool update;
   switch (pass) {
     case 1:
-      str = "I";
-      offset = (led_bck_top.width() / 2) - 2;
-      update = true;
-      break;
-    case 2:
-      str = "LOVE";
-      offset = (led_bck_top.width() / 2) - 11;
-      update = true;
-      break;
-    case 3:
       str = "YOU";
       offset = (led_bck_top.width() / 2) - 8;
       update = true;
       break;
+    case 2:
+      str = "ONE";
+      offset = (led_bck_top.width() / 2) - 8;
+      update = true;
+      break;
+    case 3:
+      str = "SEXY";
+      offset = (led_bck_top.width() / 2) - 11;
+      update = true;
+      break;
     case 4:
+      str = "MF";
+      offset = (led_bck_top.width() / 2) - 4;
+      update = true;
+      break;
+    case 5:
       led_bck_top.drawBitmap((led_bck_top.width() / 2) - 3, 0, led_designs::bitmap_heart_7_x_7, 7, 7, LED_RED_HIGH);
       led_bck_top.drawBitmap(1, 0, led_designs::bitmap_heart_7_x_7, 7, 7, LED_RED_HIGH);
       led_bck_top.drawBitmap(led_bck_top.width() - 8, 0, led_designs::bitmap_heart_7_x_7, 7, 7, LED_RED_HIGH);
