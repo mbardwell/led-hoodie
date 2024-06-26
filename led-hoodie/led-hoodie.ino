@@ -66,6 +66,8 @@ enum Mode {
 };
 
 Mode mode = MODE_BACK_SCROLL;
+bool reset_scroll = false;
+bool reset_pop = false;
 
 void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
@@ -115,6 +117,12 @@ void loop() {
       mode = MODE_BACK_SCROLL;
       break;
   }
+
+  if (mode != MODE_BACK_SCROLL)
+    reset_scroll = true;
+
+  if (mode != MODE_BACK_POP)
+    reset_pop = true;
 
   FastLED.show();
 }
@@ -248,11 +256,13 @@ int setup_bck() {
 
 int thread_bck_handler_scroll() {
   const char *quotes[] = {
-    "IT'S PARTY TIME",
-    "VERY NICE, HOW MUCH",
-    "TO INFINITY AND BEYOND",
-    "I AM GROOT",
-    "ARE YOU HIGH YET",
+    "IT'S PARTY TIME        ",
+    "VERY NICE, HOW MUCH?   ",
+    "TO INFINITY AND BEYOND ",
+    "I AM GROOT  I AM GROOT ",
+    "ARE YOU HIGH YET?      ",
+    "GIVE HIM THAT HAWK TUAH",
+    "WELCOME HOME FARMILY   ",
   };
   const int n_quotes = sizeof(quotes) / sizeof(quotes[0]);
   static int index = random(0, n_quotes);
@@ -263,21 +273,29 @@ int thread_bck_handler_scroll() {
     return RETURN_SUCCESS;
   }
 
+  if (reset_scroll) {
+    x = led_bck_top.width();
+    next = true;
+    reset_scroll = false;
+  }
+
   if (next) {
     index = random(0, n_quotes);
     next = false;
   }
 
   led_bck_top.clear();
+  led_bck_top.setTextColor(LED_CYAN_HIGH);
   led_bck_top.setCursor(x, 0);
   led_bck_top.write(quotes[index]);
   led_bck_top.show();
   led_bck_bot.clear();
+  led_bck_bot.setTextColor(LED_ORANGE_HIGH);
   led_bck_bot.setCursor(x, 0);
   led_bck_bot.write(quotes[index]);
   led_bck_bot.show();
 
-  if (--x < -100) {
+  if (--x < -125) {
     x = led_bck_top.width();
     next = true;
   }
@@ -293,44 +311,47 @@ int thread_bck_handler_pop() {
     return RETURN_SUCCESS;
   }
 
+  if (reset_pop) {
+    pass = 1;
+    reset_pop = false;
+  }
+
+  uint16_t TOP_COLOR = LED_RED_HIGH;
+  uint16_t BOT_COLOR = LED_WHITE_HIGH;
+
   led_bck_top.clear();
   led_bck_top.show();
   led_bck_bot.clear();
   led_bck_bot.show();
-  led_bck_top.setTextColor(LED_RED_HIGH);
-  led_bck_bot.setTextColor(LED_RED_HIGH);
+  led_bck_top.setTextColor(TOP_COLOR);
+  led_bck_bot.setTextColor(BOT_COLOR);
 
   int offset;
   String str;
   bool update;
   switch (pass) {
     case 1:
-      str = "YOU";
-      offset = (led_bck_top.width() / 2) - 8;
+      str = "PEACE";
+      offset = (led_bck_top.width() / 2) - 14;
       update = true;
       break;
     case 2:
-      str = "ONE";
-      offset = (led_bck_top.width() / 2) - 8;
-      update = true;
+      led_bck_top.drawBitmap((led_bck_top.width() / 2) - 3, 0, led_designs::bitmap_heart_7_x_7, 7, 7, TOP_COLOR);
+      led_bck_top.drawBitmap(1, 0, led_designs::bitmap_heart_7_x_7, 7, 7, TOP_COLOR);
+      led_bck_top.drawBitmap(led_bck_top.width() - 8, 0, led_designs::bitmap_heart_7_x_7, 7, 7, TOP_COLOR);
+      led_bck_bot.drawBitmap((led_bck_top.width() / 2) - 3, 0, led_designs::bitmap_heart_7_x_7, 7, 7, BOT_COLOR);
+      led_bck_bot.drawBitmap(1, 0, led_designs::bitmap_heart_7_x_7, 7, 7, BOT_COLOR);
+      led_bck_bot.drawBitmap(led_bck_top.width() - 8, 0, led_designs::bitmap_heart_7_x_7, 7, 7, BOT_COLOR);
       break;
     case 3:
-      str = "SEXY";
-      offset = (led_bck_top.width() / 2) - 11;
+      str = "&";
+      offset = (led_bck_top.width() / 2) - 2;
       update = true;
       break;
     case 4:
-      str = "MF";
-      offset = (led_bck_top.width() / 2) - 4;
+      str = "WUBZ";
+      offset = (led_bck_top.width() / 2) - 11;
       update = true;
-      break;
-    case 5:
-      led_bck_top.drawBitmap((led_bck_top.width() / 2) - 3, 0, led_designs::bitmap_heart_7_x_7, 7, 7, LED_RED_HIGH);
-      led_bck_top.drawBitmap(1, 0, led_designs::bitmap_heart_7_x_7, 7, 7, LED_RED_HIGH);
-      led_bck_top.drawBitmap(led_bck_top.width() - 8, 0, led_designs::bitmap_heart_7_x_7, 7, 7, LED_RED_HIGH);
-      led_bck_bot.drawBitmap((led_bck_top.width() / 2) - 3, 0, led_designs::bitmap_heart_7_x_7, 7, 7, LED_RED_HIGH);
-      led_bck_bot.drawBitmap(1, 0, led_designs::bitmap_heart_7_x_7, 7, 7, LED_RED_HIGH);
-      led_bck_bot.drawBitmap(led_bck_top.width() - 8, 0, led_designs::bitmap_heart_7_x_7, 7, 7, LED_RED_HIGH);
       break;
     default:
       pass = 0;
