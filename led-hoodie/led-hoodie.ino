@@ -12,7 +12,9 @@
  *
  * Ideas:
  *   Pacman https://projecthub.arduino.cc/giobbino/arduino-nano-pac-man-7d5f47
+ *   Snake
  *   Mouth using eyes and top back panel
+ *   Canadian flag
 */
 
 #include <FastLED.h>
@@ -174,22 +176,62 @@ int setup_arm() {
 }
 
 int thread_arm_handler() {
+  enum ArmMode {
+    MODE_ARM_CRAWL,
+    MODE_ARM_BREATH,
+  };
+  
   static uint32_t last_time = 0;
+  static uint32_t last_time_mode = 0;
   static uint32_t i = 0;
   static uint32_t i_ = 0;
+  static ArmMode arm_mode = MODE_ARM_CRAWL;
+  static bool up = true;
+
   if (millis() - last_time < 50) {
     return RETURN_SUCCESS;
   }
 
-  if (++i > N_ARM_PIXELS)
-    i = 0;
+  if (millis() - last_time_mode > 5000) {
+    arm_mode = static_cast<ArmMode>(static_cast<int>(arm_mode) + 1);
+    last_time_mode = millis();
+  }
 
-  led_arm_l_buf[i_] = CRGB::Black;
-  led_arm_r_buf[i_] = CRGB::Black;
-  led_arm_l_buf[i] = CRGB::Red;
-  led_arm_r_buf[i] = CRGB::Green;
+  switch (arm_mode) {
+    case MODE_ARM_CRAWL:
+      if (++i > N_ARM_PIXELS)
+        i = 0;
 
-  i_ = i;
+      led_arm_l_buf[i_] = CRGB::Black;
+      led_arm_r_buf[i_] = CRGB::Black;
+      led_arm_l_buf[i] = CRGB::Red;
+      led_arm_r_buf[i] = CRGB::Green;
+
+      i_ = i;
+      break;
+    case MODE_ARM_BREATH:
+      if (up) {
+        if (i < BRIGHTNESS)
+          i += 1;
+        else
+          up = false;
+      } else {
+        if (i > 0)
+          i -= 1;
+        else
+          up = true;
+      }
+      FastLED.setBrightness(i);
+      for (int j = 0; j < N_ARM_PIXELS; j++) {
+        led_arm_l_buf[j] = CRGB::DarkGoldenrod;
+        led_arm_r_buf[j] = CRGB::DarkTurquoise;
+      }
+      break;
+    default:
+      arm_mode = MODE_ARM_CRAWL;
+      break;
+  }
+
   last_time = millis();
   return RETURN_SUCCESS;
 }
