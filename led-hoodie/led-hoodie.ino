@@ -89,7 +89,7 @@ void loop() {
   static uint32_t last_time = 0;
   static int microphone_delta = 0;
 
-  if (millis() - last_time > 10000) {
+  if (millis() - last_time > 20000) {
     mode = static_cast<Mode>(static_cast<int>(mode) + 1);
     last_time = millis();
   }
