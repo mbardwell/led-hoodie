@@ -65,6 +65,7 @@ enum Mode {
   MODE_BACK_SCROLL,
   MODE_BACK_POP,
   MODE_MUSIC_LEVEL,
+  MODE_DVD,
 };
 
 Mode mode = MODE_BACK_SCROLL;
@@ -114,6 +115,12 @@ void loop() {
       thread_arm_handler();
       thread_eye_handler();
       thread_bck_handler_music_levels(microphone_delta);
+      break;
+    case MODE_DVD:
+      thread_onboard_led_handler();
+      thread_arm_handler();
+      thread_eye_handler();
+      thread_bck_handler_dvd();
       break;
     default:
       mode = MODE_BACK_SCROLL;
@@ -447,6 +454,71 @@ int thread_bck_handler_music_levels(int delta) {
 
   led_bck_top.drawFastVLine(0, N_BCK_MATRIX_HGT + 1, cache_top[0], LED_PURPLE_HIGH);
   led_bck_bot.drawFastVLine(0, -1, cache_bot[0], LED_RED_HIGH);
+
+  led_bck_top.show();
+  led_bck_bot.show();
+
+  last_time = millis();
+  return RETURN_SUCCESS;
+}
+
+enum DVD_DIRECTION {
+  DVD_DIRECTION_LEFT,
+  DVD_DIRECTION_RIGHT,
+  DVD_DIRECTION_UP,
+  DVD_DIRECTION_DOWN,
+};
+
+int thread_bck_handler_dvd() {
+  static uint32_t last_time = 0;
+
+  if (millis() - last_time < 333) {
+    return RETURN_SUCCESS;
+  }
+
+  const char word[] = "DVD";
+  const int word_hgt = 7;
+  const int word_wdt = 4*sizeof(word);
+  static int cache_x = 0;
+  static int cache_y = 0;
+  static DVD_DIRECTION x_direction = DVD_DIRECTION_LEFT; 
+  static DVD_DIRECTION y_direction = DVD_DIRECTION_DOWN;
+
+  led_bck_top.clear();
+  led_bck_bot.clear();
+
+  if (x_direction == DVD_DIRECTION_LEFT) {
+    if (cache_x == 0)
+      x_direction = DVD_DIRECTION_RIGHT;
+    else
+      cache_x--;
+  }
+  else {
+    if (cache_x == (N_BCK_MATRIX_WDT - word_wdt - 1))
+      x_direction = DVD_DIRECTION_LEFT;
+    else
+      cache_x++;
+  }
+
+  if (y_direction == DVD_DIRECTION_UP) {
+    if (cache_y == 0)
+      y_direction = DVD_DIRECTION_DOWN;
+    else
+      cache_y--;
+  }
+  else {
+    if (cache_y == ((2*N_BCK_MATRIX_HGT) - word_hgt))
+      y_direction = DVD_DIRECTION_UP;
+    else
+      cache_y++;
+  }
+
+  led_bck_top.setTextColor(LED_RED_HIGH);
+  led_bck_top.setCursor(cache_x, cache_y);
+  led_bck_top.write(word);
+  led_bck_bot.setTextColor(LED_RED_HIGH);
+  led_bck_bot.setCursor(cache_x, cache_y - N_BCK_MATRIX_HGT);
+  led_bck_bot.write(word);
 
   led_bck_top.show();
   led_bck_bot.show();
